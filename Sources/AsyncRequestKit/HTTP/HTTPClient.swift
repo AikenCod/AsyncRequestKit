@@ -76,12 +76,29 @@ public struct HTTPClient: Sendable {
         return data
     }
 
+    public func send(
+        _ request: URLRequest,
+        parameters: Parameters,
+        encoding: any ParameterEncoding
+    ) async throws -> (Data, HTTPURLResponse) {
+        try await send(parameterRequest(request, parameters: parameters, encoding: encoding))
+    }
+
     public func send<Body: Encodable>(
         _ request: URLRequest,
         body: Body,
         encoder: JSONEncoder = JSONEncoder()
     ) async throws -> (Data, HTTPURLResponse) {
         try await send(jsonRequest(request, body: body, encoder: encoder))
+    }
+
+    public func data(
+        for request: URLRequest,
+        parameters: Parameters,
+        encoding: any ParameterEncoding
+    ) async throws -> Data {
+        let (data, _) = try await send(request, parameters: parameters, encoding: encoding)
+        return data
     }
 
     public func data<Body: Encodable>(
@@ -102,6 +119,17 @@ public struct HTTPClient: Sendable {
         return try decoder.decode(T.self, from: data)
     }
 
+    public func decode<T: Decodable>(
+        _ type: T.Type,
+        from request: URLRequest,
+        parameters: Parameters,
+        encoding: any ParameterEncoding,
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        let data = try await data(for: request, parameters: parameters, encoding: encoding)
+        return try decoder.decode(T.self, from: data)
+    }
+
     public func decode<T: Decodable, Body: Encodable>(
         _ type: T.Type,
         from request: URLRequest,
@@ -115,15 +143,28 @@ public struct HTTPClient: Sendable {
 
     public func get<T: Decodable>(
         _ path: String,
+        parameters: Parameters? = nil,
         headers: [String: String] = [:],
         decoder: JSONDecoder = JSONDecoder()
     ) async throws -> T {
         let request = try request(for: path, method: "GET", headers: headers)
+
+        if let parameters {
+            return try await decode(
+                T.self,
+                from: request,
+                parameters: parameters,
+                encoding: URLEncoding.default,
+                decoder: decoder
+            )
+        }
+
         return try await decode(T.self, from: request, decoder: decoder)
     }
 
     public func get<T: Decodable>(
         _ url: URL,
+        parameters: Parameters? = nil,
         headers: [String: String] = [:],
         decoder: JSONDecoder = JSONDecoder()
     ) async throws -> T {
@@ -131,6 +172,17 @@ public struct HTTPClient: Sendable {
         request.httpMethod = "GET"
         request.applyHeaders(configuration.defaultHeaders, preservingExistingValues: true)
         request.applyHeaders(headers)
+
+        if let parameters {
+            return try await decode(
+                T.self,
+                from: request,
+                parameters: parameters,
+                encoding: URLEncoding.default,
+                decoder: decoder
+            )
+        }
+
         return try await decode(T.self, from: request, decoder: decoder)
     }
 
@@ -147,6 +199,23 @@ public struct HTTPClient: Sendable {
             from: request,
             body: body,
             encoder: encoder,
+            decoder: decoder
+        )
+    }
+
+    public func post<T: Decodable>(
+        _ path: String,
+        parameters: Parameters,
+        headers: [String: String] = [:],
+        encoding: any ParameterEncoding = JSONEncoding.default,
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        let request = try request(for: path, method: "POST", headers: headers)
+        return try await decode(
+            T.self,
+            from: request,
+            parameters: parameters,
+            encoding: encoding,
             decoder: decoder
         )
     }
@@ -171,6 +240,26 @@ public struct HTTPClient: Sendable {
         )
     }
 
+    public func post<T: Decodable>(
+        _ url: URL,
+        parameters: Parameters,
+        headers: [String: String] = [:],
+        encoding: any ParameterEncoding = JSONEncoding.default,
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.applyHeaders(configuration.defaultHeaders, preservingExistingValues: true)
+        request.applyHeaders(headers)
+        return try await decode(
+            T.self,
+            from: request,
+            parameters: parameters,
+            encoding: encoding,
+            decoder: decoder
+        )
+    }
+
     public func put<T: Decodable, Body: Encodable>(
         _ path: String,
         body: Body,
@@ -184,6 +273,23 @@ public struct HTTPClient: Sendable {
             from: request,
             body: body,
             encoder: encoder,
+            decoder: decoder
+        )
+    }
+
+    public func put<T: Decodable>(
+        _ path: String,
+        parameters: Parameters,
+        headers: [String: String] = [:],
+        encoding: any ParameterEncoding = JSONEncoding.default,
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        let request = try request(for: path, method: "PUT", headers: headers)
+        return try await decode(
+            T.self,
+            from: request,
+            parameters: parameters,
+            encoding: encoding,
             decoder: decoder
         )
     }
@@ -208,6 +314,26 @@ public struct HTTPClient: Sendable {
         )
     }
 
+    public func put<T: Decodable>(
+        _ url: URL,
+        parameters: Parameters,
+        headers: [String: String] = [:],
+        encoding: any ParameterEncoding = JSONEncoding.default,
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.applyHeaders(configuration.defaultHeaders, preservingExistingValues: true)
+        request.applyHeaders(headers)
+        return try await decode(
+            T.self,
+            from: request,
+            parameters: parameters,
+            encoding: encoding,
+            decoder: decoder
+        )
+    }
+
     public func patch<T: Decodable, Body: Encodable>(
         _ path: String,
         body: Body,
@@ -221,6 +347,23 @@ public struct HTTPClient: Sendable {
             from: request,
             body: body,
             encoder: encoder,
+            decoder: decoder
+        )
+    }
+
+    public func patch<T: Decodable>(
+        _ path: String,
+        parameters: Parameters,
+        headers: [String: String] = [:],
+        encoding: any ParameterEncoding = JSONEncoding.default,
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        let request = try request(for: path, method: "PATCH", headers: headers)
+        return try await decode(
+            T.self,
+            from: request,
+            parameters: parameters,
+            encoding: encoding,
             decoder: decoder
         )
     }
@@ -241,6 +384,26 @@ public struct HTTPClient: Sendable {
             from: request,
             body: body,
             encoder: encoder,
+            decoder: decoder
+        )
+    }
+
+    public func patch<T: Decodable>(
+        _ url: URL,
+        parameters: Parameters,
+        headers: [String: String] = [:],
+        encoding: any ParameterEncoding = JSONEncoding.default,
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.applyHeaders(configuration.defaultHeaders, preservingExistingValues: true)
+        request.applyHeaders(headers)
+        return try await decode(
+            T.self,
+            from: request,
+            parameters: parameters,
+            encoding: encoding,
             decoder: decoder
         )
     }

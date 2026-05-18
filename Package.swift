@@ -14,11 +14,20 @@ let package = Package(
         .library(
             name: "AsyncRequestKit",
             targets: ["AsyncRequestKit"]
+        ),
+        .executable(
+            name: "AsyncRequestKitDemo",
+            targets: ["AsyncRequestKitDemo"]
         )
     ],
     targets: [
         .target(
             name: "AsyncRequestKit"
+        ),
+        .executableTarget(
+            name: "AsyncRequestKitDemo",
+            dependencies: ["AsyncRequestKit"],
+            path: "Sources/AsyncRequestKitDemo"
         ),
         .testTarget(
             name: "AsyncRequestKitTests",

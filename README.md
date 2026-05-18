@@ -32,7 +32,7 @@ A lightweight Swift Concurrency networking toolkit with first-class support for 
 
 ```swift
 dependencies: [
-    .package(url: "git@github.com:AikenCod/AsyncRequestKit.git", from: "0.2.0")
+    .package(url: "git@github.com:AikenCod/AsyncRequestKit.git", from: "0.3.0")
 ]
 ```
 
@@ -40,7 +40,7 @@ dependencies: [
 
 ```swift
 dependencies: [
-    .package(url: "git@github.com:AikenCod/AsyncRequestKit.git", from: "0.2.0")
+    .package(url: "git@github.com:AikenCod/AsyncRequestKit.git", from: "0.3.0")
 ]
 ```
 
@@ -114,7 +114,8 @@ await AK.configure(
     )
 )
 
-let profile: User = try await AK.get("/me")
+let sharedClient = await AK.shared
+let profile: User = try await sharedClient.get("/me")
 ```
 
 ## 快速开始
@@ -187,7 +188,45 @@ await AK.configure(
     )
 )
 
-let profile: User = try await AK.get("/me")
+let sharedClient = await AK.shared
+let profile: User = try await sharedClient.get("/me")
+```
+
+## Demo
+
+The repository includes two runnable demos backed by
+[JSONPlaceholder](https://jsonplaceholder.typicode.com/), a free fake REST API for
+testing and prototyping.
+
+### Xcode Demo App
+
+Open [AsyncRequestKitDemoApp.xcodeproj](Examples/AsyncRequestKitDemoApp/AsyncRequestKitDemoApp.xcodeproj)
+in Xcode. The app configures `AK` once, fetches `GET /todos/1`, and lets you send
+`POST /posts` from a simple SwiftUI screen.
+
+### Command Line Demo
+
+```bash
+swift run AsyncRequestKitDemo
+```
+
+## Demo 示例
+
+仓库里现在有两个可运行 demo，都使用
+[JSONPlaceholder](https://jsonplaceholder.typicode.com/)，这是一个公开的 REST
+测试接口平台。
+
+### Xcode 示例工程
+
+直接打开 [AsyncRequestKitDemoApp.xcodeproj](Examples/AsyncRequestKitDemoApp/AsyncRequestKitDemoApp.xcodeproj)。
+
+这个 SwiftUI app 会在启动后配置一次 `AK`，自动读取 `GET /todos/1`，并支持手动发送
+`POST /posts`。
+
+### 命令行示例
+
+```bash
+swift run AsyncRequestKitDemo
 ```
 
 ### Shared Client
@@ -200,7 +239,8 @@ await AK.configure(
     )
 )
 
-let user: User = try await AK.get("/users/1")
+let sharedClient = await AK.shared
+let user: User = try await sharedClient.get("/users/1")
 ```
 
 ### 共享客户端
@@ -213,7 +253,52 @@ await AK.configure(
     )
 )
 
-let user: User = try await AK.get("/users/1")
+let sharedClient = await AK.shared
+let user: User = try await sharedClient.get("/users/1")
+```
+
+### Dictionary Parameters
+
+```swift
+let created: Post = try await sharedClient.post(
+    "/posts",
+    parameters: [
+        "title": "Hello",
+        "body": "World",
+        "userId": 1
+    ],
+    encoding: JSONEncoding.default
+)
+
+let users: [User] = try await sharedClient.get(
+    "/users",
+    parameters: [
+        "page": 2,
+        "include": ["posts", "profile"]
+    ]
+)
+```
+
+### 字典参数
+
+```swift
+let created: Post = try await sharedClient.post(
+    "/posts",
+    parameters: [
+        "title": "Hello",
+        "body": "World",
+        "userId": 1
+    ],
+    encoding: JSONEncoding.default
+)
+
+let users: [User] = try await sharedClient.get(
+    "/users",
+    parameters: [
+        "page": 2,
+        "include": ["posts", "profile"]
+    ]
+)
 ```
 
 ### Retry
@@ -354,7 +439,8 @@ await AK.configure(
     )
 )
 
-let profile: User = try await AK.get("/me")
+let sharedClient = await AK.shared
+let profile: User = try await sharedClient.get("/me")
 ```
 
 When several requests fail with `401` at the same time, `TokenRefreshCoordinator`
@@ -425,7 +511,8 @@ await AK.configure(
     )
 )
 
-let profile: User = try await AK.get("/me")
+let sharedClient = await AK.shared
+let profile: User = try await sharedClient.get("/me")
 ```
 
 当多个请求同时因为 `401` 失败时，`TokenRefreshCoordinator` 会保证只发起一次

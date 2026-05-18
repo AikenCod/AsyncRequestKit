@@ -255,6 +255,96 @@ struct AsyncRequestKitTests {
         _ = try await client.data(for: request, body: expectedBody)
     }
 
+    @Test("HTTPClient encodes dictionary parameters as JSON")
+    func httpClientEncodesJSONParameters() async throws {
+        let client = HTTPClient(
+            transport: { request in
+                #expect(request.httpMethod == "POST")
+                #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
+                #expect(request.value(forHTTPHeaderField: "Accept") == "application/json")
+
+                let object = try JSONSerialization.jsonObject(with: try #require(request.httpBody))
+                let body = try #require(object as? [String: Any])
+                #expect(body["title"] as? String == "demo")
+                #expect(body["enabled"] as? Bool == true)
+                #expect(body["count"] as? Int == 3)
+
+                let response = HTTPURLResponse(
+                    url: request.url ?? URL(string: "https://example.com")!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!
+
+                return (Data("{}".utf8), response)
+            }
+        )
+
+        var request = URLRequest(url: URL(string: "https://example.com/items")!)
+        request.httpMethod = "POST"
+
+        _ = try await client.data(
+            for: request,
+            parameters: [
+                "title": "demo",
+                "enabled": true,
+                "count": 3
+            ],
+            encoding: JSONEncoding.default
+        )
+    }
+
+    @Test("HTTPClient encodes GET parameters into query string")
+    func httpClientEncodesQueryParameters() async throws {
+        struct ResponseBody: Codable, Equatable {
+            let ok: Bool
+        }
+
+        let client = HTTPClient(
+            configuration: HTTPClientConfiguration(
+                baseURL: URL(string: "https://api.example.com")!
+            ),
+            transport: { request in
+                let url = try #require(request.url?.absoluteString)
+                #expect(url.contains("page=2"))
+                #expect(url.contains("include%5B%5D=posts"))
+                #expect(url.contains("include%5B%5D=profile"))
+                #expect(request.httpBody == nil)
+
+                let response = HTTPURLResponse(
+                    url: try #require(request.url),
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!
+
+                return (try JSONEncoder().encode(ResponseBody(ok: true)), response)
+            }
+        )
+
+        let response: ResponseBody = try await client.get(
+            "/users",
+            parameters: [
+                "page": 2,
+                "include": ["posts", "profile"]
+            ]
+        )
+
+        #expect(response == ResponseBody(ok: true))
+    }
+
+    @Test("JSONEncoding rejects non JSON objects")
+    func jsonEncodingRejectsInvalidJSONObject() throws {
+        struct CustomValue {}
+
+        var request = URLRequest(url: URL(string: "https://example.com")!)
+        request.httpMethod = "POST"
+
+        #expect(throws: ParameterEncodingError.invalidJSONObject) {
+            try JSONEncoding.default.encode(&request, with: ["custom": CustomValue()])
+        }
+    }
+
     @Test("HTTPClient post encodes request and decodes response")
     func httpClientPostRoundTrip() async throws {
         struct RequestBody: Codable, Equatable {
@@ -409,7 +499,8 @@ struct AsyncRequestKitTests {
             }
         }
 
-        let response: ResponseBody = try await AK.get("/users/9")
+        let sharedClient = await AK.shared
+        let response: ResponseBody = try await sharedClient.get("/users/9")
         #expect(response == ResponseBody(id: 9))
     }
 
@@ -423,7 +514,8 @@ struct AsyncRequestKitTests {
         await AK.reset()
 
         await #expect(throws: URLError.self) {
-            let _: String = try await AK.get("/users/1")
+            let sharedClient = await AK.shared
+            let _: String = try await sharedClient.get("/users/1")
         }
     }
 

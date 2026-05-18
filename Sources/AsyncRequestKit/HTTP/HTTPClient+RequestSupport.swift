@@ -1,6 +1,16 @@
 import Foundation
 
 extension HTTPClient {
+    func parameterRequest(
+        _ request: URLRequest,
+        parameters: Parameters,
+        encoding: any ParameterEncoding
+    ) throws -> URLRequest {
+        var request = request
+        try encoding.encode(&request, with: parameters)
+        return request
+    }
+
     func executeWithInterceptors(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let originalRequest = request
         var remainingRetries = max(0, configuration.interceptorRetryLimit)

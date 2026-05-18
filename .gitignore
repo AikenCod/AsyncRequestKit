@@ -2,3 +2,5 @@
 .build/
 .swiftpm/
 Package.resolved
+xcuserdata/
+*.xcuserstate
