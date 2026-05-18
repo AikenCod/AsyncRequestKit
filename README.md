@@ -32,7 +32,7 @@ A lightweight Swift Concurrency networking toolkit with first-class support for 
 
 ```swift
 dependencies: [
-    .package(url: "git@github.com:AikenCod/AsyncRequestKit.git", from: "0.1.0")
+    .package(url: "git@github.com:AikenCod/AsyncRequestKit.git", from: "0.2.0")
 ]
 ```
 
@@ -40,7 +40,7 @@ dependencies: [
 
 ```swift
 dependencies: [
-    .package(url: "git@github.com:AikenCod/AsyncRequestKit.git", from: "0.1.0")
+    .package(url: "git@github.com:AikenCod/AsyncRequestKit.git", from: "0.2.0")
 ]
 ```
 
