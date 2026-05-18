@@ -6,26 +6,38 @@ public enum HTTPClientError: Error, Sendable, Equatable {
 }
 
 public struct HTTPClientConfiguration: Sendable {
+    public var baseURL: URL?
     public var retryPolicy: RetryPolicy?
     public var timeout: Duration?
     public var validateStatusCode: Bool
+    public var defaultHeaders: [String: String]
+    public var interceptors: [any HTTPInterceptor]
+    public var interceptorRetryLimit: Int
 
     public init(
+        baseURL: URL? = nil,
         retryPolicy: RetryPolicy? = nil,
         timeout: Duration? = nil,
-        validateStatusCode: Bool = true
+        validateStatusCode: Bool = true,
+        defaultHeaders: [String: String] = [:],
+        interceptors: [any HTTPInterceptor] = [],
+        interceptorRetryLimit: Int = 1
     ) {
+        self.baseURL = baseURL
         self.retryPolicy = retryPolicy
         self.timeout = timeout
         self.validateStatusCode = validateStatusCode
+        self.defaultHeaders = defaultHeaders
+        self.interceptors = interceptors
+        self.interceptorRetryLimit = interceptorRetryLimit
     }
 }
 
 public struct HTTPClient: Sendable {
     public typealias Transport = @Sendable (URLRequest) async throws -> (Data, URLResponse)
 
-    private let configuration: HTTPClientConfiguration
-    private let transport: Transport
+    let configuration: HTTPClientConfiguration
+    let transport: Transport
 
     public init(
         configuration: HTTPClientConfiguration = HTTPClientConfiguration(),
@@ -39,7 +51,7 @@ public struct HTTPClient: Sendable {
 
     public func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let work: @Sendable () async throws -> (Data, HTTPURLResponse) = {
-            try await self.execute(request)
+            try await self.executeWithInterceptors(request)
         }
 
         if let retryPolicy = configuration.retryPolicy {
@@ -64,6 +76,23 @@ public struct HTTPClient: Sendable {
         return data
     }
 
+    public func send<Body: Encodable>(
+        _ request: URLRequest,
+        body: Body,
+        encoder: JSONEncoder = JSONEncoder()
+    ) async throws -> (Data, HTTPURLResponse) {
+        try await send(jsonRequest(request, body: body, encoder: encoder))
+    }
+
+    public func data<Body: Encodable>(
+        for request: URLRequest,
+        body: Body,
+        encoder: JSONEncoder = JSONEncoder()
+    ) async throws -> Data {
+        let (data, _) = try await send(request, body: body, encoder: encoder)
+        return data
+    }
+
     public func decode<T: Decodable>(
         _ type: T.Type,
         from request: URLRequest,
@@ -73,6 +102,26 @@ public struct HTTPClient: Sendable {
         return try decoder.decode(T.self, from: data)
     }
 
+    public func decode<T: Decodable, Body: Encodable>(
+        _ type: T.Type,
+        from request: URLRequest,
+        body: Body,
+        encoder: JSONEncoder = JSONEncoder(),
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        let data = try await data(for: request, body: body, encoder: encoder)
+        return try decoder.decode(T.self, from: data)
+    }
+
+    public func get<T: Decodable>(
+        _ path: String,
+        headers: [String: String] = [:],
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        let request = try request(for: path, method: "GET", headers: headers)
+        return try await decode(T.self, from: request, decoder: decoder)
+    }
+
     public func get<T: Decodable>(
         _ url: URL,
         headers: [String: String] = [:],
@@ -80,23 +129,119 @@ public struct HTTPClient: Sendable {
     ) async throws -> T {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        for (field, value) in headers {
-            request.setValue(value, forHTTPHeaderField: field)
-        }
+        request.applyHeaders(configuration.defaultHeaders, preservingExistingValues: true)
+        request.applyHeaders(headers)
         return try await decode(T.self, from: request, decoder: decoder)
     }
 
-    private func execute(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        let (data, response) = try await transport(request)
+    public func post<T: Decodable, Body: Encodable>(
+        _ path: String,
+        body: Body,
+        headers: [String: String] = [:],
+        encoder: JSONEncoder = JSONEncoder(),
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        let request = try request(for: path, method: "POST", headers: headers)
+        return try await decode(
+            T.self,
+            from: request,
+            body: body,
+            encoder: encoder,
+            decoder: decoder
+        )
+    }
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw HTTPClientError.invalidResponse
-        }
+    public func post<T: Decodable, Body: Encodable>(
+        _ url: URL,
+        body: Body,
+        headers: [String: String] = [:],
+        encoder: JSONEncoder = JSONEncoder(),
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.applyHeaders(configuration.defaultHeaders, preservingExistingValues: true)
+        request.applyHeaders(headers)
+        return try await decode(
+            T.self,
+            from: request,
+            body: body,
+            encoder: encoder,
+            decoder: decoder
+        )
+    }
 
-        if configuration.validateStatusCode, !(200...299).contains(httpResponse.statusCode) {
-            throw HTTPClientError.unacceptableStatusCode(httpResponse.statusCode, data)
-        }
+    public func put<T: Decodable, Body: Encodable>(
+        _ path: String,
+        body: Body,
+        headers: [String: String] = [:],
+        encoder: JSONEncoder = JSONEncoder(),
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        let request = try request(for: path, method: "PUT", headers: headers)
+        return try await decode(
+            T.self,
+            from: request,
+            body: body,
+            encoder: encoder,
+            decoder: decoder
+        )
+    }
 
-        return (data, httpResponse)
+    public func put<T: Decodable, Body: Encodable>(
+        _ url: URL,
+        body: Body,
+        headers: [String: String] = [:],
+        encoder: JSONEncoder = JSONEncoder(),
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.applyHeaders(configuration.defaultHeaders, preservingExistingValues: true)
+        request.applyHeaders(headers)
+        return try await decode(
+            T.self,
+            from: request,
+            body: body,
+            encoder: encoder,
+            decoder: decoder
+        )
+    }
+
+    public func patch<T: Decodable, Body: Encodable>(
+        _ path: String,
+        body: Body,
+        headers: [String: String] = [:],
+        encoder: JSONEncoder = JSONEncoder(),
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        let request = try request(for: path, method: "PATCH", headers: headers)
+        return try await decode(
+            T.self,
+            from: request,
+            body: body,
+            encoder: encoder,
+            decoder: decoder
+        )
+    }
+
+    public func patch<T: Decodable, Body: Encodable>(
+        _ url: URL,
+        body: Body,
+        headers: [String: String] = [:],
+        encoder: JSONEncoder = JSONEncoder(),
+        decoder: JSONDecoder = JSONDecoder()
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.applyHeaders(configuration.defaultHeaders, preservingExistingValues: true)
+        request.applyHeaders(headers)
+        return try await decode(
+            T.self,
+            from: request,
+            body: body,
+            encoder: encoder,
+            decoder: decoder
+        )
     }
 }
