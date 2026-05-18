@@ -24,6 +24,16 @@ struct AsyncRequestKitTests {
         }
     }
 
+    @Test("withTimeout returns even when the operation never cooperates with cancellation")
+    func timeoutReturnsForNonCooperativeOperation() async {
+        await #expect(throws: TimeoutError.self) {
+            try await withTimeout(.milliseconds(30)) {
+                try await withUnsafeThrowingContinuation { (_: UnsafeContinuation<Int, Error>) in
+                }
+            }
+        }
+    }
+
     @Test("RetryPolicy retries until success")
     func retryEventuallySucceeds() async throws {
         actor Counter {
@@ -139,6 +149,25 @@ struct AsyncRequestKitTests {
         await #expect(throws: CancellationError.self) {
             _ = try await cancelled.value
         }
+    }
+
+    @Test("AsyncQueue keeps cancelled state for running jobs")
+    func queueRunningCancellationIsTerminal() async throws {
+        let queue = AsyncQueue(maxConcurrentTasks: 1)
+
+        let job = await queue.add {
+            try? await Task.sleep(for: .milliseconds(20))
+            return "finished"
+        }
+
+        try? await Task.sleep(for: .milliseconds(5))
+        await job.cancel()
+
+        await #expect(throws: CancellationError.self) {
+            _ = try await job.value
+        }
+
+        #expect(await job.state == .cancelled)
     }
 
     @Test("HTTPClient retries and decodes payloads")

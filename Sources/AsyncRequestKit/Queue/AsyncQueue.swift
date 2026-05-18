@@ -162,7 +162,9 @@ public actor AsyncQueue {
 
     fileprivate func markFinished(id: UUID, state: AsyncJobState) {
         running[id] = nil
-        states[id] = state
+        if states[id] != .cancelled {
+            states[id] = state
+        }
         scheduleIfNeeded()
     }
 
@@ -321,12 +323,12 @@ private final class ScheduledExecution<Value: Sendable>: @unchecked Sendable {
             return runningTask
         }
 
+        Task {
+            await resultBox.fail(CancellationError())
+        }
+
         if let runningTask {
             runningTask.cancel()
-        } else {
-            Task {
-                await resultBox.fail(CancellationError())
-            }
         }
     }
 
