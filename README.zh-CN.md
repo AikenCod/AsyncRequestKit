@@ -2,22 +2,22 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-A lightweight Swift Concurrency networking toolkit with first-class support for retry, timeout, request coordination, controlled parallelism, and shared-client ergonomics.
+一个轻量级的 Swift Concurrency 网络工具库，提供开箱即用的重试、超时、请求协作、受控并发，以及共享客户端体验。
 
-## Features
+## 特性
 
-- `HTTPClient` with pluggable transport
-- `AK` shared client facade for Alamofire-style usage
-- `RetryPolicy` with fixed delay and exponential backoff
-- `withTimeout` for async operations
-- `withLimitedConcurrency` for bounded parallel work
-- `AsyncCache` with actor isolation, TTL, count limit, and request coalescing
-- `AsyncQueue` with priority, pause/resume, cancellation, and state tracking
-- `HTTPInterceptor` hooks for adapting requests and retrying after failures
-- `TokenRefreshCoordinator` for coalescing concurrent token refresh work
-- `HTTPResponse<Value>` and `EmptyResponse` for metadata-aware and no-content flows
+- 可插拔传输层的 `HTTPClient`
+- 类似 Alamofire 风格的共享入口 `AK`
+- 支持固定延迟与指数退避的 `RetryPolicy`
+- 用于异步操作的 `withTimeout`
+- 用于限制并发数的 `withLimitedConcurrency`
+- 具备 actor 隔离、TTL、数量限制和请求合并能力的 `AsyncCache`
+- 支持优先级、暂停/恢复、取消和状态跟踪的 `AsyncQueue`
+- 用于请求改写与失败重试的 `HTTPInterceptor`
+- 用于合并并发 token 刷新的 `TokenRefreshCoordinator`
+- 支持读取响应元信息的 `HTTPResponse<Value>` 和空响应场景的 `EmptyResponse`
 
-## Installation
+## 安装
 
 ```swift
 dependencies: [
@@ -25,7 +25,7 @@ dependencies: [
 ]
 ```
 
-## Quick Start
+## 快速开始
 
 ```swift
 import AsyncRequestKit
@@ -60,9 +60,9 @@ let page: [User] = try await AK.get(
 )
 ```
 
-## Request APIs
+## 请求方式
 
-### Shared Client
+### 共享客户端
 
 ```swift
 await AK.configure(
@@ -76,7 +76,7 @@ let sharedClient = await AK.shared
 let user: User = try await sharedClient.get("/users/1")
 ```
 
-### Generic Requests
+### 通用请求入口
 
 ```swift
 let user: User = try await AK.request("/users/1", method: "GET")
@@ -88,7 +88,7 @@ let created: User = try await AK.request(
 )
 ```
 
-### Response Metadata
+### 读取响应元信息
 
 ```swift
 let response: HTTPResponse<User> = try await AK.requestResponse(
@@ -100,7 +100,7 @@ print(response.response.statusCode)
 print(response.response.value(forHTTPHeaderField: "ETag") ?? "")
 ```
 
-### Empty Responses
+### 空响应
 
 ```swift
 try await AK.delete("/users/1")
@@ -108,7 +108,7 @@ try await AK.delete("/users/1")
 let empty: EmptyResponse = try await AK.delete("/users/1")
 ```
 
-### Dictionary Parameters
+### 字典参数
 
 ```swift
 let created: Post = try await AK.post(
@@ -130,7 +130,7 @@ let users: [User] = try await AK.get(
 )
 ```
 
-### Codable Request Body
+### Codable 请求体
 
 ```swift
 struct CreateUser: Codable {
@@ -148,7 +148,7 @@ let user: User = try await AK.post(
 )
 ```
 
-## Retry And Timeout
+## 重试与超时
 
 ```swift
 let payload = try await withRetry(maxAttempts: 3, delay: .fixed(.milliseconds(200))) {
@@ -182,7 +182,7 @@ let job = await queue.add(priority: .high) {
 let data = try await job.value
 ```
 
-## Token Refresh Demo
+## Token 刷新示例
 
 ```swift
 import AsyncRequestKit
@@ -249,23 +249,23 @@ await AK.configure(
 let profile: User = try await AK.get("/me")
 ```
 
-When several requests fail with `401` at the same time, `TokenRefreshCoordinator` ensures only one refresh request runs. The others wait for the same result and retry after the token is updated.
+当多个请求同时因为 `401` 失败时，`TokenRefreshCoordinator` 会保证只发起一次刷新请求，其他请求等待同一个刷新结果，token 更新后再自动重试。
 
 ## Demo
 
-The repository includes two runnable demos backed by [JSONPlaceholder](https://jsonplaceholder.typicode.com/).
+仓库里包含两个可运行 demo，底层都使用 [JSONPlaceholder](https://jsonplaceholder.typicode.com/)。
 
-### Xcode Demo App
+### Xcode 示例工程
 
-Open [AsyncRequestKitDemoApp.xcodeproj](Examples/AsyncRequestKitDemoApp/AsyncRequestKitDemoApp.xcodeproj) in Xcode.
+直接打开 [AsyncRequestKitDemoApp.xcodeproj](Examples/AsyncRequestKitDemoApp/AsyncRequestKitDemoApp.xcodeproj)。
 
-### Command Line Demo
+### 命令行示例
 
 ```bash
 swift run AsyncRequestKitDemo
 ```
 
-## Testing
+## 测试
 
 ```bash
 swift test
