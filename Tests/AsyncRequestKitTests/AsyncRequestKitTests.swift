@@ -333,6 +333,127 @@ struct AsyncRequestKitTests {
         #expect(response == ResponseBody(ok: true))
     }
 
+    @Test("HTTPClient supports empty DELETE responses")
+    func httpClientSupportsEmptyDeleteResponses() async throws {
+        let client = HTTPClient(
+            configuration: HTTPClientConfiguration(
+                baseURL: URL(string: "https://api.example.com")!
+            ),
+            transport: { request in
+                #expect(request.httpMethod == "DELETE")
+                #expect(request.url?.absoluteString == "https://api.example.com/items/7")
+
+                let response = HTTPURLResponse(
+                    url: try #require(request.url),
+                    statusCode: 204,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!
+
+                return (Data(), response)
+            }
+        )
+
+        let response: EmptyResponse = try await client.delete("/items/7")
+        #expect(response == EmptyResponse())
+    }
+
+    @Test("HTTPClient supports void requests for delete")
+    func httpClientSupportsVoidDeleteRequests() async throws {
+        let client = HTTPClient(
+            configuration: HTTPClientConfiguration(
+                baseURL: URL(string: "https://api.example.com")!
+            ),
+            transport: { request in
+                #expect(request.httpMethod == "DELETE")
+                #expect(request.url?.absoluteString == "https://api.example.com/items/9")
+
+                let response = HTTPURLResponse(
+                    url: try #require(request.url),
+                    statusCode: 204,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!
+
+                return (Data(), response)
+            }
+        )
+
+        try await client.delete("/items/9")
+    }
+
+    @Test("HTTPClient exposes response metadata for decoded payloads")
+    func httpClientExposesResponseMetadata() async throws {
+        struct ResponseBody: Codable, Equatable {
+            let id: Int
+        }
+
+        let client = HTTPClient(
+            configuration: HTTPClientConfiguration(
+                baseURL: URL(string: "https://api.example.com")!
+            ),
+            transport: { request in
+                #expect(request.httpMethod == "GET")
+                let response = HTTPURLResponse(
+                    url: try #require(request.url),
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: [
+                        "ETag": "\"abc123\"",
+                        "X-RateLimit-Remaining": "42"
+                    ]
+                )!
+
+                return (try JSONEncoder().encode(ResponseBody(id: 42)), response)
+            }
+        )
+
+        let response: HTTPResponse<ResponseBody> = try await client.requestResponse(
+            "/items/42",
+            method: "GET"
+        )
+
+        #expect(response.value == ResponseBody(id: 42))
+        #expect(response.response.statusCode == 200)
+        #expect(response.response.value(forHTTPHeaderField: "ETag") == "\"abc123\"")
+        #expect(response.response.value(forHTTPHeaderField: "X-RateLimit-Remaining") == "42")
+    }
+
+    @Test("HTTPClient request method supports parameter encoding defaults")
+    func httpClientRequestMethodUsesDefaultParameterEncoding() async throws {
+        struct ResponseBody: Codable, Equatable {
+            let ok: Bool
+        }
+
+        let client = HTTPClient(
+            configuration: HTTPClientConfiguration(
+                baseURL: URL(string: "https://api.example.com")!
+            ),
+            transport: { request in
+                #expect(request.httpMethod == "DELETE")
+                #expect(request.url?.absoluteString == "https://api.example.com/items/5?force=1")
+                #expect(request.httpBody == nil)
+
+                let response = HTTPURLResponse(
+                    url: try #require(request.url),
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!
+
+                return (try JSONEncoder().encode(ResponseBody(ok: true)), response)
+            }
+        )
+
+        let response: ResponseBody = try await client.request(
+            "/items/5",
+            method: "DELETE",
+            parameters: ["force": true]
+        )
+
+        #expect(response == ResponseBody(ok: true))
+    }
+
     @Test("JSONEncoding rejects non JSON objects")
     func jsonEncodingRejectsInvalidJSONObject() throws {
         struct CustomValue {}
@@ -517,6 +638,79 @@ struct AsyncRequestKitTests {
             let sharedClient = await AK.shared
             let _: String = try await sharedClient.get("/users/1")
         }
+    }
+
+    @Test("AK requestResponse exposes response metadata")
+    func akRequestResponseExposesMetadata() async throws {
+        struct ResponseBody: Codable, Equatable {
+            let id: Int
+        }
+
+        await AK.use(
+            HTTPClient(
+                configuration: HTTPClientConfiguration(
+                    baseURL: URL(string: "https://api.example.com")!
+                ),
+                transport: { request in
+                    #expect(request.httpMethod == "GET")
+                    #expect(request.url?.absoluteString == "https://api.example.com/users/2")
+
+                    let response = HTTPURLResponse(
+                        url: try #require(request.url),
+                        statusCode: 200,
+                        httpVersion: nil,
+                        headerFields: ["ETag": "\"user-2\""]
+                    )!
+
+                    return (try JSONEncoder().encode(ResponseBody(id: 2)), response)
+                }
+            )
+        )
+        defer {
+            Task {
+                await AK.reset()
+            }
+        }
+
+        let response: HTTPResponse<ResponseBody> = try await AK.requestResponse(
+            "/users/2",
+            method: "GET"
+        )
+
+        #expect(response.value == ResponseBody(id: 2))
+        #expect(response.response.value(forHTTPHeaderField: "ETag") == "\"user-2\"")
+    }
+
+    @Test("AK delete supports empty responses")
+    func akDeleteSupportsEmptyResponses() async throws {
+        await AK.use(
+            HTTPClient(
+                configuration: HTTPClientConfiguration(
+                    baseURL: URL(string: "https://api.example.com")!
+                ),
+                transport: { request in
+                    #expect(request.httpMethod == "DELETE")
+                    #expect(request.url?.absoluteString == "https://api.example.com/items/11")
+
+                    let response = HTTPURLResponse(
+                        url: try #require(request.url),
+                        statusCode: 204,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )!
+
+                    return (Data(), response)
+                }
+            )
+        )
+        defer {
+            Task {
+                await AK.reset()
+            }
+        }
+
+        let response: EmptyResponse = try await AK.delete("/items/11")
+        #expect(response == EmptyResponse())
     }
 
     @Test("HTTPClient interceptor refreshes token and retries unauthorized requests")

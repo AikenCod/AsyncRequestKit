@@ -32,7 +32,7 @@ A lightweight Swift Concurrency networking toolkit with first-class support for 
 
 ```swift
 dependencies: [
-    .package(url: "git@github.com:AikenCod/AsyncRequestKit.git", from: "0.3.0")
+    .package(url: "https://github.com/AikenCod/AsyncRequestKit.git", from: "0.3.0")
 ]
 ```
 
@@ -40,7 +40,7 @@ dependencies: [
 
 ```swift
 dependencies: [
-    .package(url: "git@github.com:AikenCod/AsyncRequestKit.git", from: "0.3.0")
+    .package(url: "https://github.com/AikenCod/AsyncRequestKit.git", from: "0.3.0")
 ]
 ```
 
@@ -50,72 +50,34 @@ dependencies: [
 import AsyncRequestKit
 import Foundation
 
-actor TokenStore {
-    private var accessToken = "expired-token"
-
-    func token() -> String {
-        accessToken
-    }
-
-    func update(token: String) {
-        accessToken = token
-    }
+struct User: Decodable {
+    let id: Int
+    let name: String
 }
 
-struct AuthInterceptor: HTTPInterceptor {
-    let tokenStore: TokenStore
-    let coordinator: TokenRefreshCoordinator<String>
-
-    func adapt(_ request: URLRequest) async throws -> URLRequest {
-        var request = request
-        let token = await tokenStore.token()
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        return request
-    }
-
-    func retry(
-        _ request: URLRequest,
-        dueTo error: Error,
-        response: HTTPURLResponse?,
-        data: Data?
-    ) async throws -> HTTPRetryDecision {
-        guard response?.statusCode == 401 else {
-            return .doNotRetry
-        }
-
-        let freshToken = try await coordinator.refresh {
-            let refreshed = try await refreshTokenFromServer()
-            await tokenStore.update(token: refreshed.accessToken)
-            return refreshed.accessToken
-        }
-
-        await tokenStore.update(token: freshToken)
-        return .retry
-    }
+struct CreateUser: Encodable {
+    let name: String
 }
-
-let tokenStore = TokenStore()
 
 await AK.configure(
     HTTPClientConfiguration(
         baseURL: URL(string: "https://api.example.com")!,
-        defaultHeaders: [
-            "X-App-Version": "1.0.0"
-        ],
-        interceptors: [
-            AuthInterceptor(
-                tokenStore: tokenStore,
-                coordinator: TokenRefreshCoordinator<String>()
-            )
-        ],
-        interceptorRetryLimit: 1,
-        retryPolicy: .fixed(maxAttempts: 3, delay: .milliseconds(200)),
-        timeout: .seconds(5)
+        defaultHeaders: ["Accept": "application/json"]
     )
 )
 
 let sharedClient = await AK.shared
-let profile: User = try await sharedClient.get("/me")
+let profile: User = try await sharedClient.get("/users/1")
+
+let created: User = try await sharedClient.post(
+    "/users",
+    body: CreateUser(name: "Aiken")
+)
+
+let users: [User] = try await sharedClient.get(
+    "/users",
+    parameters: ["page": 2]
+)
 ```
 
 ## 快速开始
@@ -124,72 +86,34 @@ let profile: User = try await sharedClient.get("/me")
 import AsyncRequestKit
 import Foundation
 
-actor TokenStore {
-    private var accessToken = "expired-token"
-
-    func token() -> String {
-        accessToken
-    }
-
-    func update(token: String) {
-        accessToken = token
-    }
+struct User: Decodable {
+    let id: Int
+    let name: String
 }
 
-struct AuthInterceptor: HTTPInterceptor {
-    let tokenStore: TokenStore
-    let coordinator: TokenRefreshCoordinator<String>
-
-    func adapt(_ request: URLRequest) async throws -> URLRequest {
-        var request = request
-        let token = await tokenStore.token()
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        return request
-    }
-
-    func retry(
-        _ request: URLRequest,
-        dueTo error: Error,
-        response: HTTPURLResponse?,
-        data: Data?
-    ) async throws -> HTTPRetryDecision {
-        guard response?.statusCode == 401 else {
-            return .doNotRetry
-        }
-
-        let freshToken = try await coordinator.refresh {
-            let refreshed = try await refreshTokenFromServer()
-            await tokenStore.update(token: refreshed.accessToken)
-            return refreshed.accessToken
-        }
-
-        await tokenStore.update(token: freshToken)
-        return .retry
-    }
+struct CreateUser: Encodable {
+    let name: String
 }
-
-let tokenStore = TokenStore()
 
 await AK.configure(
     HTTPClientConfiguration(
         baseURL: URL(string: "https://api.example.com")!,
-        defaultHeaders: [
-            "X-App-Version": "1.0.0"
-        ],
-        interceptors: [
-            AuthInterceptor(
-                tokenStore: tokenStore,
-                coordinator: TokenRefreshCoordinator<String>()
-            )
-        ],
-        interceptorRetryLimit: 1,
-        retryPolicy: .fixed(maxAttempts: 3, delay: .milliseconds(200)),
-        timeout: .seconds(5)
+        defaultHeaders: ["Accept": "application/json"]
     )
 )
 
 let sharedClient = await AK.shared
-let profile: User = try await sharedClient.get("/me")
+let profile: User = try await sharedClient.get("/users/1")
+
+let created: User = try await sharedClient.post(
+    "/users",
+    body: CreateUser(name: "Aiken")
+)
+
+let users: [User] = try await sharedClient.get(
+    "/users",
+    parameters: ["page": 2]
+)
 ```
 
 ## Demo

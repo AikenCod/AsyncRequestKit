@@ -40,4 +40,11 @@ public enum AK {
     public static func reset() async {
         await store.reset()
     }
+
+    static func withSharedClient<T>(
+        _ operation: (HTTPClient) async throws -> T
+    ) async rethrows -> T {
+        let client = await store.currentClient()
+        return try await operation(client)
+    }
 }
