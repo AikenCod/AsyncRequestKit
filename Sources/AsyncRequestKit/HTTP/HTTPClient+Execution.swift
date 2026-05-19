@@ -2,8 +2,9 @@ import Foundation
 
 extension HTTPClient {
     public func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let preparedRequest = preparedRequest(request)
         let work: @Sendable () async throws -> (Data, HTTPURLResponse) = {
-            try await self.executeWithInterceptors(request)
+            try await self.executeWithInterceptors(preparedRequest)
         }
 
         if let retryPolicy = configuration.retryPolicy {

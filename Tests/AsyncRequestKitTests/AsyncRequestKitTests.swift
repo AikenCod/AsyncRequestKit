@@ -587,6 +587,37 @@ struct AsyncRequestKitTests {
         #expect(response == ResponseBody(ok: true))
     }
 
+    @Test("HTTPClient send applies default headers and preserves explicit request values")
+    func httpClientSendAppliesDefaultHeaders() async throws {
+        let client = HTTPClient(
+            configuration: HTTPClientConfiguration(
+                defaultHeaders: [
+                    "Authorization": "Bearer default-token",
+                    "X-Client": "AsyncRequestKit"
+                ]
+            ),
+            transport: { request in
+                #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer override-token")
+                #expect(request.value(forHTTPHeaderField: "X-Client") == "AsyncRequestKit")
+
+                let response = HTTPURLResponse(
+                    url: request.url ?? URL(string: "https://example.com")!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!
+
+                return (Data(), response)
+            }
+        )
+
+        var request = URLRequest(url: URL(string: "https://example.com/profile")!)
+        request.httpMethod = "GET"
+        request.setValue("Bearer override-token", forHTTPHeaderField: "Authorization")
+
+        _ = try await client.send(request)
+    }
+
     @Test("AK uses shared configuration for path-based requests")
     func akUsesSharedConfiguration() async throws {
         struct ResponseBody: Codable, Equatable {

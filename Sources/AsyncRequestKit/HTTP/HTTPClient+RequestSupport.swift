@@ -1,6 +1,12 @@
 import Foundation
 
 extension HTTPClient {
+    func preparedRequest(_ request: URLRequest) -> URLRequest {
+        var request = request
+        request.applyHeaders(configuration.defaultHeaders, preservingExistingValues: true)
+        return request
+    }
+
     func parameterRequest(
         _ request: URLRequest,
         parameters: Parameters,
