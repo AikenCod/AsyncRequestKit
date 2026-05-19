@@ -19,10 +19,18 @@
 
 ## 安装
 
+### Swift Package Manager
+
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AikenCod/AsyncRequestKit.git", from: "0.3.0")
+    .package(url: "https://github.com/AikenCod/AsyncRequestKit.git", from: "0.3.2")
 ]
+```
+
+### CocoaPods
+
+```ruby
+pod 'AsyncRequestKit', '~> 0.3'
 ```
 
 ## 快速开始
