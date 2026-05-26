@@ -23,14 +23,14 @@ A lightweight Swift Concurrency networking toolkit with first-class support for 
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AikenCod/AsyncRequestKit.git", from: "0.3.2")
+    .package(url: "https://github.com/AikenCod/AsyncRequestKit.git", from: "0.4.0")
 ]
 ```
 
 ### CocoaPods
 
 ```ruby
-pod 'AsyncRequestKit', '~> 0.3'
+pod 'AsyncRequestKit', '~> 0.4'
 ```
 
 ## Quick Start
@@ -153,6 +153,27 @@ struct User: Codable {
 let user: User = try await AK.post(
     "/users",
     body: CreateUser(name: "Aiken")
+)
+```
+
+### Small File Uploads
+
+```swift
+struct UploadResult: Decodable {
+    let url: String
+}
+
+let result: UploadResult = try await AK.upload(
+    "/avatar",
+    multipart: { form in
+        form.append("user-1", name: "userId")
+        form.append(
+            imageData,
+            name: "file",
+            fileName: "avatar.jpg",
+            mimeType: "image/jpeg"
+        )
+    }
 )
 ```
 

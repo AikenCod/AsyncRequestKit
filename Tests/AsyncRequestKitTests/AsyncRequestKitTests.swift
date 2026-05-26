@@ -509,6 +509,60 @@ struct AsyncRequestKitTests {
         #expect(response == ResponseBody(id: 7, name: "created"))
     }
 
+    @Test("HTTPClient uploads multipart form data")
+    func httpClientUploadsMultipartFormData() async throws {
+        struct ResponseBody: Codable, Equatable {
+            let ok: Bool
+        }
+
+        let client = HTTPClient(
+            configuration: HTTPClientConfiguration(
+                baseURL: URL(string: "https://api.example.com")!
+            ),
+            transport: { request in
+                #expect(request.httpMethod == "POST")
+                #expect(request.url?.absoluteString == "https://api.example.com/avatar")
+
+                let contentType = try #require(request.value(forHTTPHeaderField: "Content-Type"))
+                #expect(contentType.hasPrefix("multipart/form-data; boundary="))
+                #expect(request.value(forHTTPHeaderField: "X-Trace-ID") == "upload-1")
+
+                let boundary = String(contentType.dropFirst("multipart/form-data; boundary=".count))
+                let body = String(decoding: try #require(request.httpBody), as: UTF8.self)
+                #expect(body.contains("--\(boundary)\r\n"))
+                #expect(body.contains("Content-Disposition: form-data; name=\"userId\"\r\n\r\nuser-1\r\n"))
+                #expect(body.contains("Content-Disposition: form-data; name=\"file\"; filename=\"avatar.txt\"\r\n"))
+                #expect(body.contains("Content-Type: text/plain\r\n\r\nhello upload\r\n"))
+                #expect(body.hasSuffix("--\(boundary)--\r\n"))
+
+                let response = HTTPURLResponse(
+                    url: try #require(request.url),
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!
+
+                return (try JSONEncoder().encode(ResponseBody(ok: true)), response)
+            }
+        )
+
+        let response: ResponseBody = try await client.upload(
+            "/avatar",
+            headers: ["X-Trace-ID": "upload-1"],
+            multipart: { form in
+                form.append("user-1", name: "userId")
+                form.append(
+                    Data("hello upload".utf8),
+                    name: "file",
+                    fileName: "avatar.txt",
+                    mimeType: "text/plain"
+                )
+            }
+        )
+
+        #expect(response == ResponseBody(ok: true))
+    }
+
     @Test("HTTPClient resolves relative paths from baseURL")
     func httpClientResolvesBaseURLPaths() async throws {
         struct ResponseBody: Codable, Equatable {
