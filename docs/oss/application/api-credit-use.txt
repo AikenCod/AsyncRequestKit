@@ -1,0 +1,1 @@
+I will use API credits to assist issue triage, turn confirmed bug reports into reproducible tests, detect public API and documentation drift, review pull requests, and draft changelog entries for AsyncRequestKit. Human approval will remain required for labels, comments, merges, releases, and security decisions, and automation outputs will be auditable in the public repository.
