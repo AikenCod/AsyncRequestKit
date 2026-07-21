@@ -22,7 +22,7 @@ reviewed or submitted.
 | CocoaPods metadata | Podspec exists publicly; package publication/downloads not observed | 2026-07-21 | https://github.com/AikenCod/AsyncRequestKit/blob/main/AsyncRequestKit.podspec | GitHub file and local `pod lib lint`; no download count claimed |
 | Swift Package Index | Not observed | 2026-07-21 | https://swiftpackageindex.com/search?query=AsyncRequestKit | No verified public package page recorded |
 | Download/adoption metrics | Not observed | 2026-07-21 | https://github.com/AikenCod/AsyncRequestKit | No authoritative download source or downstream adopter recorded |
-| Trust/readiness work | MIT metadata, CI, community files, changelog, DocC, guides, and validation scripts exist only in local commits after `origin/main` | 2026-07-21 | Not public | `git log origin/main..main`; must not be described as public until pushed and verified |
+| Trust/readiness work | MIT metadata, CI, community files, changelog, DocC, guides, validation scripts, and a `0.5.0` release candidate exist only in local commits after `origin/main` | 2026-07-21 | Not public | `git log origin/main..main`; must not be described as public until pushed and verified |
 | Maintainer role | `AikenCod` controls the repository and authenticated GitHub session; primary-maintainer wording requires the user's final confirmation | 2026-07-21 | https://github.com/AikenCod/AsyncRequestKit | GitHub authentication and repository ownership; final form value is user-confirmed |
 | Program criteria | OpenAI considers usage, ecosystem importance, active maintenance, and maintainer responsibilities; selection is discretionary | 2026-07-21 | https://openai.com/form/codex-for-oss/ | Live official program page and linked terms |
 

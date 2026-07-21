@@ -23,14 +23,14 @@ A lightweight Swift Concurrency networking toolkit with first-class support for 
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AikenCod/AsyncRequestKit.git", from: "0.4.0")
+    .package(url: "https://github.com/AikenCod/AsyncRequestKit.git", from: "0.5.0")
 ]
 ```
 
 ### CocoaPods
 
 ```ruby
-pod 'AsyncRequestKit', '~> 0.4'
+pod 'AsyncRequestKit', '~> 0.5'
 ```
 
 ## Quick Start

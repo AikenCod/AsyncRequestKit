@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = "AsyncRequestKit"
-  spec.version      = "0.4.0"
+  spec.version      = "0.5.0"
   spec.summary      = "A lightweight Swift Concurrency networking toolkit."
   spec.description  = <<-DESC
 AsyncRequestKit provides a lightweight Swift Concurrency networking toolkit
