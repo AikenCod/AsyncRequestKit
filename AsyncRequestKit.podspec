@@ -9,11 +9,8 @@ refresh coordination, and shared-client ergonomics.
   DESC
 
   spec.homepage     = "https://github.com/AikenCod/AsyncRequestKit"
-  spec.license      = {
-    :type => "Proprietary",
-    :text => "No separate license file has been added to this repository yet."
-  }
-  spec.author       = { "Alex" => "Alex@qt.com" }
+  spec.license      = { :type => "MIT", :file => "LICENSE" }
+  spec.author       = "AikenCod"
   spec.source       = {
     :git => "https://github.com/AikenCod/AsyncRequestKit.git",
     :tag => spec.version.to_s

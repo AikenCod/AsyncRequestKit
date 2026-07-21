@@ -299,3 +299,7 @@ swift run AsyncRequestKitDemo
 ```bash
 swift test
 ```
+
+## 许可证
+
+AsyncRequestKit 基于 MIT 许可证发布，详情请参阅 [LICENSE](LICENSE)。
