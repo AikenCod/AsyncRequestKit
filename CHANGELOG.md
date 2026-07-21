@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- MIT license metadata and repository validation scripts.
+- MIT license metadata and repository validation scripts, including a public API compatibility gate.
 - GitHub Actions checks for Swift 6 on macOS and Linux, clean SwiftPM consumption, and CocoaPods metadata.
 - Contributor, security, support, conduct, roadmap, issue, and pull-request policies.
 - DocC catalog, Swift Package Index documentation configuration, release history, and production integration guides.
