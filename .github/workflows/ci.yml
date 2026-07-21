@@ -28,6 +28,7 @@ jobs:
       - run: swift --version
       - run: swift package dump-package
       - run: Scripts/validate_linux_imports.sh
+      - run: Scripts/test_spm_consumer.sh
       - run: swift test
 
   pod-lint:
@@ -35,4 +36,4 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
-      - run: pod lib lint AsyncRequestKit.podspec --quick --allow-warnings --skip-tests
+      - run: Scripts/validate_repository_metadata.sh
