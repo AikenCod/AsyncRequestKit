@@ -13,6 +13,12 @@ while IFS= read -r -d '' file; do
       missing=1
     fi
   fi
+
+  if grep -Eq 'CF(GetTypeID|BooleanGetTypeID)' "$file" &&
+     ! grep -q '^import CoreFoundation$' "$file"; then
+    echo "missing CoreFoundation compatibility import: $file" >&2
+    missing=1
+  fi
 done < <(find Sources/AsyncRequestKit Tests/AsyncRequestKitTests -type f -name '*.swift' -print0)
 
 exit "$missing"
