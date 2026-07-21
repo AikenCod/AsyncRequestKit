@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added conditional `FoundationNetworking` imports for Linux compatibility.
 - Replaced private podspec identity metadata with the public maintainer identity.
 
+### Fixed
+
+- Made running-job cancellation terminal even when an operation ignores task cancellation.
+- Made the command-line demo compile under Linux strict-concurrency checks.
+
 ## [0.4.0] - 2026-05-26
 
 ### Added

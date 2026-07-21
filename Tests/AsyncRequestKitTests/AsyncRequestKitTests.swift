@@ -157,15 +157,38 @@ struct AsyncRequestKitTests {
 
     @Test("AsyncQueue keeps cancelled state for running jobs")
     func queueRunningCancellationIsTerminal() async throws {
+        actor Gate {
+            private var isOpen = false
+            private var waiters: [CheckedContinuation<Void, Never>] = []
+
+            func wait() async {
+                guard !isOpen else { return }
+                await withCheckedContinuation { continuation in
+                    waiters.append(continuation)
+                }
+            }
+
+            func open() {
+                isOpen = true
+                let pendingWaiters = waiters
+                waiters.removeAll()
+                pendingWaiters.forEach { $0.resume() }
+            }
+        }
+
         let queue = AsyncQueue(maxConcurrentTasks: 1)
+        let started = Gate()
+        let release = Gate()
 
         let job = await queue.add {
-            try? await Task.sleep(for: .milliseconds(20))
+            await started.open()
+            await release.wait()
             return "finished"
         }
 
-        try? await Task.sleep(for: .milliseconds(5))
+        await started.wait()
         await job.cancel()
+        await release.open()
 
         await #expect(throws: CancellationError.self) {
             _ = try await job.value

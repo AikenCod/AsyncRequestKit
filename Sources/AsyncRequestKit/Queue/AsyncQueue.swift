@@ -306,17 +306,17 @@ private final class ScheduledExecution<Value: Sendable>: @unchecked Sendable {
         let startedTask = Task { [operation, resultBox, weak queue] in
             do {
                 let value = try await operation()
+                guard self.claimCompletion() else { return }
                 await resultBox.succeed(value)
                 await queue?.markFinished(id: self.jobID, state: .succeeded)
-                self.markCompleted()
             } catch is CancellationError {
+                guard self.claimCompletion() else { return }
                 await resultBox.fail(CancellationError())
                 await queue?.markFinished(id: self.jobID, state: .cancelled)
-                self.markCompleted()
             } catch {
+                guard self.claimCompletion() else { return }
                 await resultBox.fail(error)
                 await queue?.markFinished(id: self.jobID, state: .failed)
-                self.markCompleted()
             }
         }
 
@@ -330,22 +330,22 @@ private final class ScheduledExecution<Value: Sendable>: @unchecked Sendable {
     }
 
     func cancel() {
-        let runningTask = lock.withLock { () -> Task<Void, Never>? in
-            if finished {
-                return nil
-            }
+        let cancellation = lock.withLock { () -> (shouldCancel: Bool, task: Task<Void, Never>?) in
+            guard !finished else { return (false, nil) }
 
             finished = true
             let runningTask = task
             task = nil
-            return runningTask
+            return (true, runningTask)
         }
+
+        guard cancellation.shouldCancel else { return }
 
         Task {
             await resultBox.fail(CancellationError())
         }
 
-        if let runningTask {
+        if let runningTask = cancellation.task {
             runningTask.cancel()
         }
     }
@@ -366,10 +366,12 @@ private final class ScheduledExecution<Value: Sendable>: @unchecked Sendable {
         }
     }
 
-    private func markCompleted() {
-        lock.withLock {
+    private func claimCompletion() -> Bool {
+        lock.withLock { () -> Bool in
+            guard !finished else { return false }
             finished = true
             task = nil
+            return true
         }
     }
 }

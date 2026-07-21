@@ -52,7 +52,8 @@ enum AsyncRequestKitDemo {
 
             print("Created post #\(created.id): \(created.title)")
         } catch {
-            fputs("Demo failed: \(error)\n", stderr)
+            let message = Data("Demo failed: \(error)\n".utf8)
+            try? FileHandle.standardError.write(contentsOf: message)
             Foundation.exit(1)
         }
     }
