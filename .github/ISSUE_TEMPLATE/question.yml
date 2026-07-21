@@ -1,0 +1,31 @@
+name: Integration question
+description: Ask a focused public question about using AsyncRequestKit
+title: "[Question]: "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: AsyncRequestKit version
+      placeholder: "0.4.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Swift and platform versions
+      placeholder: "Swift 6.0, macOS 13"
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to accomplish?
+    validations:
+      required: true
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What have you tried?
+      description: Share a minimal example without secrets, private endpoints, customer data, or proprietary code.
+    validations:
+      required: true

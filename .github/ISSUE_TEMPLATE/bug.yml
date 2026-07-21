@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a reproducible problem in AsyncRequestKit
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve AsyncRequestKit. Remove credentials, private endpoints, customer data, and proprietary code before submitting.
+  - type: input
+    id: version
+    attributes:
+      label: AsyncRequestKit version
+      placeholder: "0.4.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Swift and platform versions
+      placeholder: "Swift 6.0, iOS 16"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide the smallest public code sample or repository that demonstrates the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and removed sensitive or proprietary information.
+          required: true

@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose an improvement tied to a concrete user problem
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Describe the workflow or limitation, not only a preferred implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: Proposed API or behavior
+      description: Include a small usage example when an API change is proposed.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: true
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: Source compatibility impact
+      options:
+        - No public API change
+        - Additive public API
+        - Potentially breaking change
+        - Unsure
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: This request is based on a real use case and is not intended to manufacture repository activity.
+          required: true
