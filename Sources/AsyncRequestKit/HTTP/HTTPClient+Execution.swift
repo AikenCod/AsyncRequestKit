@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 extension HTTPClient {
     public func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let preparedRequest = preparedRequest(request)

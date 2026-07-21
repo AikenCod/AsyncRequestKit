@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 public typealias Parameters = [String: Any]
 
 public protocol ParameterEncoding {

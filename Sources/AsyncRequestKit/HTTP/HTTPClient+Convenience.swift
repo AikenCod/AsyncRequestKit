@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 extension HTTPClient {
     public func request<T: Decodable>(
         _ path: String,

@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 public enum HTTPClientError: Error, Sendable, Equatable {
     case invalidResponse
     case unacceptableStatusCode(Int, Data)

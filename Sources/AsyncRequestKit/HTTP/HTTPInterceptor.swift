@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 public enum HTTPRetryDecision: Sendable, Equatable {
     case doNotRetry
     case retry

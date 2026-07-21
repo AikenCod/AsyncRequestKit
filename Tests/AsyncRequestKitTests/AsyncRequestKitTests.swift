@@ -1,5 +1,9 @@
 import Foundation
 import Testing
+
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 @testable import AsyncRequestKit
 
 @Suite("AsyncRequestKit", .serialized)
