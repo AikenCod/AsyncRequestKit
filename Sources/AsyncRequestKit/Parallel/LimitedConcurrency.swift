@@ -1,3 +1,7 @@
+/// Transforms items concurrently while limiting the number of running operations.
+///
+/// Results preserve the input order. A nonpositive limit throws
+/// ``AsyncRequestKitError/invalidConcurrencyLimit``.
 public func withLimitedConcurrency<Input: Sendable, Output: Sendable>(
     maxConcurrentTasks limit: Int,
     items: [Input],

@@ -300,6 +300,14 @@ swift run AsyncRequestKitDemo
 swift test
 ```
 
+## 项目资源
+
+- [API 文档源文件](Sources/AsyncRequestKit/AsyncRequestKit.docc/AsyncRequestKit.md)
+- [更新日志](CHANGELOG.md)
+- [贡献指南](CONTRIBUTING.md)
+- [安全策略](SECURITY.md)
+- [路线图](ROADMAP.md)
+
 ## 许可证
 
 AsyncRequestKit 基于 MIT 许可证发布，详情请参阅 [LICENSE](LICENSE)。

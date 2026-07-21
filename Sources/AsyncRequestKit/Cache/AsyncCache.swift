@@ -1,7 +1,11 @@
+/// Controls expiration and capacity for an ``AsyncCache``.
 public struct CachePolicy: Sendable, Equatable {
+    /// The lifetime of each cached value, or `nil` for no time-based expiration.
     public let ttl: Duration?
+    /// The maximum number of values, or `nil` for no count limit.
     public let countLimit: Int?
 
+    /// Creates a cache policy.
     public init(ttl: Duration? = nil, countLimit: Int? = nil) {
         self.ttl = ttl
         self.countLimit = countLimit
@@ -21,20 +25,26 @@ private struct CacheEntry<Value: Sendable>: Sendable {
     }
 }
 
+/// An actor-isolated cache that coalesces concurrent loads for the same key.
 public actor AsyncCache<Key: Hashable & Sendable, Value: Sendable> {
     private let policy: CachePolicy
     private let clock = ContinuousClock()
     private var storage: [Key: CacheEntry<Value>] = [:]
     private var inFlightTasks: [Key: Task<Value, Error>] = [:]
 
+    /// Creates a cache with the supplied policy.
     public init(policy: CachePolicy = CachePolicy()) {
         self.policy = policy
     }
 
+    /// Creates a cache from expiration and capacity values.
     public init(ttl: Duration? = nil, countLimit: Int? = nil) {
         self.policy = CachePolicy(ttl: ttl, countLimit: countLimit)
     }
 
+    /// Returns a cached value or loads it once for all concurrent callers of the key.
+    ///
+    /// Failed loads are not cached.
     public func value(
         for key: Key,
         loader: @escaping @Sendable () async throws -> Value
@@ -69,16 +79,19 @@ public actor AsyncCache<Key: Hashable & Sendable, Value: Sendable> {
         }
     }
 
+    /// Inserts or replaces a value.
     public func setValue(_ value: Value, for key: Key) {
         insert(value, for: key, now: clock.now)
     }
 
+    /// Removes a value and cancels an in-flight load for the key.
     public func removeValue(for key: Key) {
         storage[key] = nil
         inFlightTasks[key]?.cancel()
         inFlightTasks[key] = nil
     }
 
+    /// Removes all values and cancels all in-flight loads.
     public func removeAll() {
         storage.removeAll()
         for task in inFlightTasks.values {
@@ -87,6 +100,7 @@ public actor AsyncCache<Key: Hashable & Sendable, Value: Sendable> {
         inFlightTasks.removeAll()
     }
 
+    /// Returns a currently valid cached value without invoking a loader.
     public func cachedValue(for key: Key) -> Value? {
         let now = clock.now
         guard var entry = storage[key], !entry.isExpired(now: now) else {
@@ -99,6 +113,7 @@ public actor AsyncCache<Key: Hashable & Sendable, Value: Sendable> {
         return entry.value
     }
 
+    /// The number of stored entries, including entries not yet checked for expiration.
     public var count: Int {
         storage.count
     }

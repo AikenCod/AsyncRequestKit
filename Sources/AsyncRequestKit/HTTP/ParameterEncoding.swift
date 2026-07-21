@@ -4,22 +4,32 @@ import Foundation
 import FoundationNetworking
 #endif
 
+/// Dictionary parameters accepted by the built-in encoders.
 public typealias Parameters = [String: Any]
 
+/// A strategy that mutates a URL request to contain dictionary parameters.
 public protocol ParameterEncoding {
+    /// Encodes parameters into a request.
     func encode(_ request: inout URLRequest, with parameters: Parameters?) throws
 }
 
+/// Errors produced by built-in parameter encoders.
 public enum ParameterEncodingError: Error, Equatable {
+    /// Query encoding required a request URL, but none was present.
     case missingURL
+    /// A parameter value could not be represented by the selected encoder.
     case invalidJSONObject
 }
 
+/// Encodes parameters as a JSON request body.
 public struct JSONEncoding: ParameterEncoding, Sendable {
+    /// A reusable default JSON encoder.
     public static let `default` = JSONEncoding()
 
+    /// Creates a JSON parameter encoder.
     public init() {}
 
+    /// Encodes a valid JSON object and supplies JSON content headers when absent.
     public func encode(_ request: inout URLRequest, with parameters: Parameters?) throws {
         guard let parameters else {
             return
@@ -41,10 +51,15 @@ public struct JSONEncoding: ParameterEncoding, Sendable {
     }
 }
 
+/// Encodes nested parameters as URL query items or a form-encoded body.
 public struct URLEncoding: ParameterEncoding, Sendable {
+    /// The location where encoded parameters are written.
     public enum Destination: Sendable {
+        /// Use the query for GET, HEAD, and DELETE; otherwise use the body.
         case methodDependent
+        /// Always append parameters to the URL query.
         case queryString
+        /// Always write parameters to the request body.
         case httpBody
     }
 
@@ -52,12 +67,15 @@ public struct URLEncoding: ParameterEncoding, Sendable {
     public static let queryString = URLEncoding(destination: .queryString)
     public static let httpBody = URLEncoding(destination: .httpBody)
 
+    /// The destination selected for this encoder.
     public let destination: Destination
 
+    /// Creates a URL encoder.
     public init(destination: Destination = .methodDependent) {
         self.destination = destination
     }
 
+    /// Encodes dictionaries and arrays using bracket notation.
     public func encode(_ request: inout URLRequest, with parameters: Parameters?) throws {
         guard let parameters, !parameters.isEmpty else {
             return

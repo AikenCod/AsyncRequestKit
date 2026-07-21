@@ -20,23 +20,31 @@ private actor AKSharedClientStore {
     }
 }
 
+/// A process-wide facade for a shared ``HTTPClient``.
+///
+/// Prefer a directly owned client when dependencies or configuration should be
+/// isolated. Access to the shared value is actor coordinated.
 public enum AK {
     private static let store = AKSharedClientStore()
 
+    /// The currently configured shared client.
     public static var shared: HTTPClient {
         get async {
             await store.currentClient()
         }
     }
 
+    /// Replaces the shared client with one created from a configuration.
     public static func configure(_ configuration: HTTPClientConfiguration) async {
         await store.configure(configuration)
     }
 
+    /// Installs an existing client, including its custom transport.
     public static func use(_ client: HTTPClient) async {
         await store.use(client)
     }
 
+    /// Restores the default shared client.
     public static func reset() async {
         await store.reset()
     }

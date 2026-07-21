@@ -1,5 +1,6 @@
 import Foundation
 
+/// The error thrown when an operation does not finish within its allowed duration.
 public struct TimeoutError: Error, Sendable, Equatable {}
 
 private actor TimeoutCoordinator<T: Sendable> {
@@ -56,6 +57,10 @@ private final class TimeoutTaskBox: @unchecked Sendable {
     }
 }
 
+/// Runs an asynchronous operation with a deadline relative to the current time.
+///
+/// When the deadline expires, the operation task is cancelled and ``TimeoutError``
+/// is thrown. Cancelling the caller cancels both the operation and timeout tasks.
 public func withTimeout<T: Sendable>(
     _ duration: Duration,
     operation: @escaping @Sendable () async throws -> T

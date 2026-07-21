@@ -1,5 +1,6 @@
 import Foundation
 
+/// Scheduling priority for work submitted to an ``AsyncQueue``.
 public enum AsyncJobPriority: Int, Sendable, Comparable {
     case low = 0
     case normal = 1
@@ -10,6 +11,7 @@ public enum AsyncJobPriority: Int, Sendable, Comparable {
     }
 }
 
+/// The lifecycle state of a queued job.
 public enum AsyncJobState: Sendable, Equatable {
     case pending
     case running
@@ -18,7 +20,9 @@ public enum AsyncJobState: Sendable, Equatable {
     case cancelled
 }
 
+/// A handle used to await, inspect, or cancel queued work.
 public final class AsyncJob<Value: Sendable>: Sendable {
+    /// The stable identifier assigned by the queue.
     public let id: UUID
 
     private let task: Task<Value, Error>
@@ -37,23 +41,27 @@ public final class AsyncJob<Value: Sendable>: Sendable {
         self.cancelHandler = cancelHandler
     }
 
+    /// The operation's value, or its error when the operation fails.
     public var value: Value {
         get async throws {
             try await task.value
         }
     }
 
+    /// The job's current queue state.
     public var state: AsyncJobState {
         get async {
             await stateProvider()
         }
     }
 
+    /// Cancels the job whether it is pending or already running.
     public func cancel() async {
         await cancelHandler()
     }
 }
 
+/// A priority-aware actor that limits the number of concurrently running jobs.
 public actor AsyncQueue {
     private struct QueueEntry: Sendable {
         let id: UUID
@@ -71,10 +79,15 @@ public actor AsyncQueue {
     private var running: [UUID: QueueEntry] = [:]
     private var states: [UUID: AsyncJobState] = [:]
 
+    /// Creates a queue. Values below one are clamped to one concurrent task.
     public init(maxConcurrentTasks: Int) {
         self.maxConcurrentTasks = max(1, maxConcurrentTasks)
     }
 
+    /// Submits work and returns a handle immediately.
+    ///
+    /// Submitting to a closed queue returns a job that fails with
+    /// ``AsyncRequestKitError/queueClosed``.
     public func add<Value: Sendable>(
         priority: AsyncJobPriority = .normal,
         operation: @escaping @Sendable () async throws -> Value
@@ -129,15 +142,18 @@ public actor AsyncQueue {
         )
     }
 
+    /// Prevents pending work from starting. Running jobs continue.
     public func pause() {
         isPaused = true
     }
 
+    /// Allows pending work to start again.
     public func resume() {
         isPaused = false
         scheduleIfNeeded()
     }
 
+    /// Cancels all pending and running jobs without closing the queue.
     public func cancelAll() {
         for entry in pending {
             states[entry.id] = .cancelled
@@ -151,11 +167,13 @@ public actor AsyncQueue {
         }
     }
 
+    /// Permanently closes the queue and cancels all current work.
     public func close() {
         isClosed = true
         cancelAll()
     }
 
+    /// Returns the recorded state for an identifier.
     public func state(for id: UUID) -> AsyncJobState {
         states[id] ?? .cancelled
     }

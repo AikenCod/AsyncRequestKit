@@ -1,16 +1,25 @@
 import Foundation
 
+/// Describes how an asynchronous operation is retried after failures.
 public struct RetryPolicy: Sendable {
+    /// The delay applied between attempts.
     public enum Delay: Sendable, Equatable {
+        /// Retry immediately.
         case none
+        /// Wait for a constant duration before every retry.
         case fixed(Duration)
+        /// Increase the delay after each failure, optionally limiting and randomizing it.
         case exponentialBackoff(initialDelay: Duration, multiplier: Double, maxDelay: Duration? = nil, jitter: Double = 0)
     }
 
+    /// The total number of attempts, including the initial attempt.
     public let maxAttempts: Int
+    /// The delay strategy between attempts.
     public let delay: Delay
+    /// A predicate that determines whether a particular error is retryable.
     public let shouldRetry: @Sendable (Error) -> Bool
 
+    /// Creates a retry policy. Values below one for `maxAttempts` are clamped to one.
     public init(
         maxAttempts: Int,
         delay: Delay = .none,
@@ -21,6 +30,7 @@ public struct RetryPolicy: Sendable {
         self.shouldRetry = shouldRetry
     }
 
+    /// Creates a retry policy with a constant delay.
     public static func fixed(
         maxAttempts: Int,
         delay: Duration,
@@ -29,6 +39,9 @@ public struct RetryPolicy: Sendable {
         RetryPolicy(maxAttempts: maxAttempts, delay: .fixed(delay), shouldRetry: shouldRetry)
     }
 
+    /// Creates a retry policy with exponential backoff.
+    ///
+    /// `multiplier` is clamped to at least one and `jitter` to the range `0...1`.
     public static func exponentialBackoff(
         maxAttempts: Int,
         initialDelay: Duration,
@@ -49,6 +62,9 @@ public struct RetryPolicy: Sendable {
         )
     }
 
+    /// Runs an operation until it succeeds or the policy declines another attempt.
+    ///
+    /// Cancellation is checked before each attempt and while waiting between attempts.
     public func run<T: Sendable>(
         operation: @escaping @Sendable () async throws -> T
     ) async throws -> T {
@@ -106,6 +122,7 @@ public struct RetryPolicy: Sendable {
     }
 }
 
+/// Runs an asynchronous operation using an ad-hoc retry policy.
 public func withRetry<T: Sendable>(
     maxAttempts: Int,
     delay: RetryPolicy.Delay = .none,

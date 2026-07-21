@@ -300,6 +300,14 @@ swift run AsyncRequestKitDemo
 swift test
 ```
 
+## Project Resources
+
+- [API documentation source](Sources/AsyncRequestKit/AsyncRequestKit.docc/AsyncRequestKit.md)
+- [Changelog](CHANGELOG.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Roadmap](ROADMAP.md)
+
 ## License
 
 AsyncRequestKit is available under the MIT License. See [LICENSE](LICENSE).
