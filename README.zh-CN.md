@@ -303,6 +303,9 @@ swift test
 ## 项目资源
 
 - [API 文档源文件](Sources/AsyncRequestKit/AsyncRequestKit.docc/AsyncRequestKit.md)
+- [认证客户端指南](docs/guides/authenticated-client.md)
+- [Multipart 上传指南](docs/guides/multipart-upload.md)
+- [采用检查清单](docs/guides/adoption-checklist.md)
 - [更新日志](CHANGELOG.md)
 - [贡献指南](CONTRIBUTING.md)
 - [安全策略](SECURITY.md)

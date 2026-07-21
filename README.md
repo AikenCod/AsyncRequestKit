@@ -303,6 +303,9 @@ swift test
 ## Project Resources
 
 - [API documentation source](Sources/AsyncRequestKit/AsyncRequestKit.docc/AsyncRequestKit.md)
+- [Authenticated client guide](docs/guides/authenticated-client.md)
+- [Multipart upload guide](docs/guides/multipart-upload.md)
+- [Adoption checklist](docs/guides/adoption-checklist.md)
 - [Changelog](CHANGELOG.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
